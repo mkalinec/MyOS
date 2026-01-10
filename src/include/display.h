@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../include/limine.h"
+#include "../include/font.h"
 
 
 bool check_for_framebuffer();
@@ -51,3 +52,14 @@ void draw_filled_triangle(struct limine_framebuffer *fb,
                           int x2, int y2,
                           int x3, int y3,
                           int color);
+
+
+void draw_char(struct limine_framebuffer *fb,
+               char c, int x, int y,
+               uint32_t color);
+
+               
+void draw_text(struct limine_framebuffer *fb,
+               const char *text,
+               int x, int y,
+               uint32_t color);

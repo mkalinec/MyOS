@@ -225,3 +225,39 @@ void draw_filled_triangle(struct limine_framebuffer *fb,
         draw_line(fb, ax, y1 + i, bx, y1 + i, color);
     }
 }
+
+void draw_char(struct limine_framebuffer *fb,
+               char c, int x, int y,
+               uint32_t color)
+{
+    if (c < 0 || c > 127) return;
+
+    for (int row = 0; row < 8; row++) {
+        uint8_t bitmap = font8x8_basic[(int)c][row];
+        for (int col = 0; col < 8; col++) {
+            if (bitmap & (1 << (7 - col))) {
+                draw_pixel(fb, x + col, y + row, color);
+            }
+        }
+    }
+}
+
+void draw_text(struct limine_framebuffer *fb,
+               const char *text,
+               int x, int y,
+               uint32_t color)
+{
+    int cursor_x = x;
+    int cursor_y = y;
+
+    while (*text) {
+        if (*text == '\n') {
+            cursor_x = x;
+            cursor_y += 8;
+        } else {
+            draw_char(fb, *text, cursor_x, cursor_y, color);
+            cursor_x += 8;
+        }
+        text++;
+    }
+}

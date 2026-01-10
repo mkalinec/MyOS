@@ -50,6 +50,8 @@ void kmain(void) {
 
     char c;
 
+    draw_text(framebuffer, "Hello, World!\nFrom OS that doest exist", 10, 10, COLOR_WHITE);
+
     while (1) {
         c = kbd_get_char();
         if (c == 'a') {
@@ -79,8 +81,6 @@ void kmain(void) {
         if (c == 'i'){
             draw_filled_triangle(framebuffer, 200, 50, 600, 600, 800, 120, COLOR_BROWN);
         }
-
-
 
 
     }
