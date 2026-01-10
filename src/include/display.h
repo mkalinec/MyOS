@@ -75,3 +75,25 @@ void draw_text_scaled(struct limine_framebuffer *fb,
                       const char *text,
                       int x, int y,
                       uint32_t color, int scale);
+
+void draw_char_8x16(struct limine_framebuffer *fb,
+                    unsigned char c, int x, int y,
+                    uint32_t fg, int draw_bg, uint32_t bg);
+
+void draw_text_8x16(struct limine_framebuffer *fb,
+                    const char *text, int x, int y,
+                    uint32_t fg, int draw_bg, uint32_t bg);
+
+void draw_char_16x32(struct limine_framebuffer *fb,
+                     unsigned char c, int x, int y,
+                     uint32_t fg, int draw_bg, uint32_t bg);
+
+void draw_char_24x32(struct limine_framebuffer *fb,
+                     unsigned char c, int x, int y,
+                     uint32_t fg, int draw_bg, uint32_t bg);
+
+void draw_char_custom(struct limine_framebuffer *fb,
+                      unsigned char c, int x, int y,
+                      uint32_t fg, int draw_bg, uint32_t bg,
+                      uint32_t x_size, uint32_t y_size,
+                      const uint32_t (*font)[y_size]);

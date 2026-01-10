@@ -276,55 +276,76 @@ void clear_screen(struct limine_framebuffer* fb,
     }
 }
 
-void draw_char_scaled(struct limine_framebuffer *fb,
-                      char c, int x, int y,
-                      uint32_t color, int scale)
+
+void draw_char_8x16(struct limine_framebuffer *fb,
+                    unsigned char c, int x, int y,
+                    uint32_t fg, int draw_bg, uint32_t bg)
 {
     if (!fb) return;
-    if (scale < 1) scale = 1;
-    if (c < 0 || c > 127) return;
 
-    for (int row = 0; row < 8; row++) {
-        uint8_t bitmap = font8x8_basic[(int)c][row];
+    for (int row = 0; row < 16; row++) {
+        uint8_t bits = font8x16[c][row];
 
         for (int col = 0; col < 8; col++) {
-            if (bitmap & (1 << (7 - col))) {
+            int on = bits & (1u << (7 - col));
 
-                int px = x + col * scale;
-                int py = y + row * scale;
-
-                for (int dy = 0; dy < scale; dy++) {
-                    for (int dx = 0; dx < scale; dx++) {
-                        draw_pixel(fb, (uint32_t)(px + dx), (uint32_t)(py + dy), color);
-                    }
-                }
+            if (on) {
+                draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), fg);
+            } else if (draw_bg) {
+                draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), bg);
             }
         }
     }
 }
 
-void draw_text_scaled(struct limine_framebuffer *fb,
-                      const char *text,
-                      int x, int y,
-                      uint32_t color, int scale)
+void draw_char_16x32(struct limine_framebuffer *fb,
+                     unsigned char c, int x, int y,
+                     uint32_t fg, int draw_bg, uint32_t bg)
 {
-    if (!fb || !text) return;
-    if (scale < 1) scale = 1;
+    if (!fb) return;
 
-    int cursor_x = x;
-    int cursor_y = y;
+    for (int row = 0; row < 32; row++) {
+        uint8_t hi = font16x32[c][row][0];
+        uint8_t lo = font16x32[c][row][1];
 
-    int step_x = 8 * scale;
-    int step_y = 8 * scale;
+        for (int col = 0; col < 16; col++) {
+            int on;
+            if (col < 8) on = hi & (1u << (7 - col));
+            else         on = lo & (1u << (15 - col));
 
-    while (*text) {
-        if (*text == '\n') {
-            cursor_x = x;
-            cursor_y += step_y;
-        } else {
-            draw_char_scaled(fb, *text, cursor_x, cursor_y, color, scale);
-            cursor_x += step_x;
+            if (on) draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), fg);
+            else if (draw_bg) draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), bg);
         }
-        text++;
+    }
+}
+
+void draw_char_24x32(struct limine_framebuffer *fb,
+                     unsigned char c, int x, int y,
+                     uint32_t fg, int draw_bg, uint32_t bg)
+{
+    for (int row = 0; row < 32; row++) {
+        uint32_t bits = font24x32[c][row];
+        for (int col = 0; col < 24; col++) {
+            int on = bits & (1u << (23 - col));
+            if (on) draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), fg);
+            else if (draw_bg) draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), bg);
+        }
+    }
+}
+
+
+void draw_char_custom(struct limine_framebuffer *fb,
+                      unsigned char c, int x, int y,
+                      uint32_t fg, int draw_bg, uint32_t bg,
+                      uint32_t x_size, uint32_t y_size,
+                      const uint32_t (*font)[y_size])
+{
+    for (int row = 0; row < y_size; row++) {
+        uint32_t bits = font[c][row];
+        for (int col = 0; col < x_size; col++) {
+            int on = bits & (1u << (x_size - 1 - col));
+            if (on) draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), fg);
+            else if (draw_bg) draw_pixel(fb, (uint32_t)(x + col), (uint32_t)(y + row), bg);
+        }
     }
 }
