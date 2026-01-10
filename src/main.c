@@ -67,6 +67,19 @@ void kmain(void) {
         if (c == 'e'){
             draw_triangle(framebuffer, 100, 100, 300, 50, 600, 400, COLOR_LAWN_GREEN);
         }
+        if (c == 'f'){
+            draw_circle(framebuffer, 100, 100, 20, COLOR_PINK);
+        }
+        if (c == 'g'){
+            draw_filled_circle(framebuffer, 500, 500, 100, COLOR_YELLOW);
+        }
+        if (c == 'h'){
+            draw_filled_rectangle(framebuffer, 352, 123, 100, 235, COLOR_LIGHT_SKY_BLUE);
+        }
+        if (c == 'i'){
+            draw_filled_triangle(framebuffer, 200, 50, 600, 600, 800, 120, COLOR_BROWN);
+        }
+
 
 
 

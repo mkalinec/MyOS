@@ -14,6 +14,20 @@ bool check_for_framebuffer(struct limine_framebuffer_request *framebuffer_reques
     return false;
 }
 
+static inline void draw_pixel(struct limine_framebuffer *framebuffer,
+                              uint32_t x, uint32_t y,
+                              uint32_t color) {
+    if (!framebuffer) return;
+    if (x >= framebuffer->width) return;
+    if (y >= framebuffer->height) return;
+
+    volatile uint32_t *pixels = framebuffer->address;
+    uint32_t pitch_in_pixels = framebuffer->pitch / sizeof(uint32_t);
+
+    pixels[y * pitch_in_pixels + x] = color;
+}
+
+
 void draw_rectangle(struct limine_framebuffer *fb,
                     int start_x, int start_y,
                     int end_x,   int end_y,
@@ -100,4 +114,114 @@ void draw_triangle(struct limine_framebuffer *fb,
     draw_line(fb, x1, y1 ,x2, y2, color);
     draw_line(fb, x1, y1 ,x3, y3, color);
     draw_line(fb, x2, y2 ,x3, y3, color);
+}
+
+
+void draw_circle(struct limine_framebuffer *framebuffer,
+                 int center_x, int center_y,
+                 int radius,
+                 uint32_t color) {
+
+    int x = 0;
+    int y = radius;
+    int decision = 3 - 2 * radius;
+
+    while (y >= x) {
+        draw_pixel(framebuffer, center_x + x, center_y + y, color);
+        draw_pixel(framebuffer, center_x - x, center_y + y, color);
+        draw_pixel(framebuffer, center_x + x, center_y - y, color);
+        draw_pixel(framebuffer, center_x - x, center_y - y, color);
+        draw_pixel(framebuffer, center_x + y, center_y + x, color);
+        draw_pixel(framebuffer, center_x - y, center_y + x, color);
+        draw_pixel(framebuffer, center_x + y, center_y - x, color);
+        draw_pixel(framebuffer, center_x - y, center_y - x, color);
+
+        if (decision < 0) {
+            decision += 4 * x + 6;
+        } else {
+            decision += 4 * (x - y) + 10;
+            y--;
+        }
+        x++;
+    }
+}
+
+
+void draw_filled_circle(struct limine_framebuffer *framebuffer,
+                        int center_x, int center_y,
+                        int radius,
+                        uint32_t color) {
+
+    int x = 0;
+    int y = radius;
+    int decision = 3 - 2 * radius;
+
+    while (y >= x) {
+        for (int i = center_x - x; i <= center_x + x; i++) {
+            draw_pixel(framebuffer, i, center_y + y, color);
+            draw_pixel(framebuffer, i, center_y - y, color);
+        }
+        for (int i = center_x - y; i <= center_x + y; i++) {
+            draw_pixel(framebuffer, i, center_y + x, color);
+            draw_pixel(framebuffer, i, center_y - x, color);
+        }
+
+        if (decision < 0) {
+            decision += 4 * x + 6;
+        } else {
+            decision += 4 * (x - y) + 10;
+            y--;
+        }
+        x++;
+    }
+}
+
+void draw_filled_rectangle(struct limine_framebuffer *fb,
+                           int start_x, int start_y,
+                           int end_x,   int end_y,
+                           int color)
+{
+    volatile uint32_t *pixels = fb->address;
+    int pixels_per_row = fb->pitch / 4;
+
+    // clipping
+    if (start_x > end_x) { int tmp = start_x; start_x = end_x; end_x = tmp; }
+    if (start_y > end_y) { int tmp = start_y; start_y = end_y; end_y = tmp; }
+
+    for (int y = start_y; y <= end_y; y++) {
+        for (int x = start_x; x <= end_x; x++) {
+            pixels[y * pixels_per_row + x] = color;
+        }
+    }
+}
+
+void draw_filled_triangle(struct limine_framebuffer *fb,
+                          int x1, int y1,
+                          int x2, int y2,
+                          int x3, int y3,
+                          int color)
+{
+    if (y1 > y2) { int tmp; tmp=y1;y1=y2;y2=tmp; tmp=x1;x1=x2;x2=tmp; }
+    if (y1 > y3) { int tmp; tmp=y1;y1=y3;y3=tmp; tmp=x1;x1=x3;x3=tmp; }
+    if (y2 > y3) { int tmp; tmp=y2;y2=y3;y3=tmp; tmp=x2;x2=x3;x3=tmp; }
+
+    int total_height = y3 - y1;
+
+    for (int i = 0; i <= total_height; i++) {
+        int second_half = i > (y2 - y1) || (y2 - y1 == 0);
+        int segment_height = second_half ? y3 - y2 : y2 - y1;
+        if (segment_height == 0) continue;
+
+        int ax = x1 + (x3 - x1) * i / total_height;
+        int bx;
+        if (second_half) {
+            bx = x2 + (x3 - x2) * (i - (y2 - y1)) / segment_height;
+        } else {
+            bx = x1 + (x2 - x1) * i / segment_height;
+        }
+
+        if (ax > bx) { int tmp = ax; ax = bx; bx = tmp; }
+
+        draw_line(fb, ax, y1 + i, bx, y1 + i, color);
+    }
 }
