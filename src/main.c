@@ -64,6 +64,10 @@ void kmain(void) {
         if (c == 'd'){
             draw_line(framebuffer, 20, 30, 800, 100, COLOR_ORANGE);
         }
+        if (c == 'e'){
+            draw_triangle(framebuffer, 100, 100, 300, 50, 600, 400, COLOR_LAWN_GREEN);
+        }
+
 
 
     }
