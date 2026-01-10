@@ -275,3 +275,56 @@ void clear_screen(struct limine_framebuffer* fb,
         }
     }
 }
+
+void draw_char_scaled(struct limine_framebuffer *fb,
+                      char c, int x, int y,
+                      uint32_t color, int scale)
+{
+    if (!fb) return;
+    if (scale < 1) scale = 1;
+    if (c < 0 || c > 127) return;
+
+    for (int row = 0; row < 8; row++) {
+        uint8_t bitmap = font8x8_basic[(int)c][row];
+
+        for (int col = 0; col < 8; col++) {
+            if (bitmap & (1 << (7 - col))) {
+
+                int px = x + col * scale;
+                int py = y + row * scale;
+
+                for (int dy = 0; dy < scale; dy++) {
+                    for (int dx = 0; dx < scale; dx++) {
+                        draw_pixel(fb, (uint32_t)(px + dx), (uint32_t)(py + dy), color);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void draw_text_scaled(struct limine_framebuffer *fb,
+                      const char *text,
+                      int x, int y,
+                      uint32_t color, int scale)
+{
+    if (!fb || !text) return;
+    if (scale < 1) scale = 1;
+
+    int cursor_x = x;
+    int cursor_y = y;
+
+    int step_x = 8 * scale;
+    int step_y = 8 * scale;
+
+    while (*text) {
+        if (*text == '\n') {
+            cursor_x = x;
+            cursor_y += step_y;
+        } else {
+            draw_char_scaled(fb, *text, cursor_x, cursor_y, color, scale);
+            cursor_x += step_x;
+        }
+        text++;
+    }
+}

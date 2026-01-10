@@ -67,6 +67,11 @@ void draw_text(struct limine_framebuffer *fb,
 void clear_screen(struct limine_framebuffer* fb,
                   uint32_t color);
 
-void draw_char16(struct limine_framebuffer *fb, char c, int x, int y, uint32_t color);
-void draw_text16(struct limine_framebuffer *fb, const char *text, int x, int y, uint32_t color);
-static inline void putpx(struct limine_framebuffer *fb, uint32_t x, uint32_t y, uint32_t color);
+void draw_char_scaled(struct limine_framebuffer *fb,
+                      char c, int x, int y,
+                      uint32_t color, int scale);
+
+void draw_text_scaled(struct limine_framebuffer *fb,
+                      const char *text,
+                      int x, int y,
+                      uint32_t color, int scale);

@@ -4,8 +4,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define GLYPH_W 8
-#define GLYPH_H 8
+#define FONT_SCALE 2
+#define GLYPH_W (8 * FONT_SCALE)
+#define GLYPH_H (8 * FONT_SCALE)
 
 static void memmove_bytes(uint8_t *dst, const uint8_t *src, size_t n) {
     if (dst == src || n == 0) return;
@@ -177,7 +178,7 @@ void console_putc(console_t *c, char ch) {
     int y = c->cursor_row * GLYPH_H;
 
     draw_filled_rectangle(c->fb, x, y, x + (GLYPH_W - 1), y + (GLYPH_H - 1), (int)c->bg);
-    draw_char(c->fb, ch, x, y, c->fg);
+    draw_char_scaled(c->fb, ch, x, y, c->fg, FONT_SCALE);
 
     c->cursor_col++;
     if (c->cursor_col >= c->cols) console_newline(c);
