@@ -5,6 +5,7 @@
 #include "include/keyboard.h"
 #include "include/memory.h"
 #include "include/display.h"
+#include "include/colors.h"
 
 
 __attribute__((used, section(".limine_requests")))
@@ -52,16 +53,16 @@ void kmain(void) {
     while (1) {
         c = kbd_get_char();
         if (c == 'a') {
-            draw_line(framebuffer, 0, 0, 300, 300, 0xFFFFFF);
+            draw_line(framebuffer, 0, 0, 300, 300, COLOR_WHITE);
         }
         if (c == 'b') {
-            draw_line(framebuffer, 0, 0, 300, 300, 0x000000);
+            draw_line(framebuffer, 0, 0, 300, 300, COLOR_BLACK);
         }
         if (c == 'c'){
-            draw_rectangle(framebuffer, 10, 10, 200, 500, 0x0000FF);
+            draw_rectangle(framebuffer, 10, 10, 200, 500, COLOR_MAGENTA);
         }
         if (c == 'd'){
-            draw_line(framebuffer, 20, 30, 800, 100, 0xFF0000);
+            draw_line(framebuffer, 20, 30, 800, 100, COLOR_ORANGE);
         }
 
 
