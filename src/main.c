@@ -6,6 +6,9 @@
 #include "include/memory.h"
 #include "include/display.h"
 #include "include/colors.h"
+#include "include/console.h"
+#include "lib/string.h"
+#include "include/cmd.h"
 
 
 __attribute__((used, section(".limine_requests")))
@@ -31,6 +34,8 @@ static void hcf(void) {
     }
 }
 
+static void handle_command(console_t *con, char *line);
+
 
 void kmain(void) {
     // Ensure the bootloader actually understands our base revision (see spec).
@@ -43,51 +48,84 @@ void kmain(void) {
     }
 
 
-
     // Fetch the first framebuffer.
     struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
+    console_t con;
+    console_init(&con, framebuffer, 0xFFFFFF, 0x000000);
+    console_cursor_set_blink(&con, 20000000000000000); // doladíš podľa rýchlosti slučky
 
-    char c;
+    char line[128];
 
-    draw_text(framebuffer, "Hello, World!\nFrom OS that doest exist", 10, 10, COLOR_WHITE);
 
     while (1) {
-        c = kbd_get_char();
-        if (c == 'a') {
-            draw_line(framebuffer, 0, 0, 300, 300, COLOR_WHITE);
-        }
-        if (c == 'b') {
-            draw_line(framebuffer, 0, 0, 300, 300, COLOR_BLACK);
-        }
-        if (c == 'c'){
-            draw_rectangle(framebuffer, 10, 10, 200, 500, COLOR_MAGENTA);
-        }
-        if (c == 'd'){
-            draw_line(framebuffer, 20, 30, 800, 100, COLOR_ORANGE);
-        }
-        if (c == 'e'){
-            draw_triangle(framebuffer, 100, 100, 300, 50, 600, 400, COLOR_LAWN_GREEN);
-        }
-        if (c == 'f'){
-            draw_circle(framebuffer, 100, 100, 20, COLOR_PINK);
-        }
-        if (c == 'g'){
-            draw_filled_circle(framebuffer, 500, 500, 100, COLOR_YELLOW);
-        }
-        if (c == 'h'){
-            draw_filled_rectangle(framebuffer, 352, 123, 100, 235, COLOR_LIGHT_SKY_BLUE);
-        }
-        if (c == 'i'){
-            draw_filled_triangle(framebuffer, 200, 50, 600, 600, 800, 120, COLOR_BROWN);
-        }
-        if (c == ' '){
-            clear_screen(framebuffer, COLOR_BLACK);
-        }
+        console_readline(&con, "> ", line, sizeof(line));
+        handle_command(&con, line);
+    }
+}
 
 
+static void handle_command(console_t *con, char *line) {
+    cmdline_t cl;
+    int argc = cmd_tokenize(line, &cl);
+    if (argc <= 0) return;
+
+    if (streq(cl.cmd, "cls")) {
+        console_clear(con);
+        return;
     }
 
-    // We're done, just hang...
-    hcf();
+    if (streq(cl.cmd, "rectangle")) {
+        // square x1 y1 x2 y2 COLOR
+        if (argc != 6) {
+            console_write(con, "Usage: square x1 y1 x2 y2 COLOR\n");
+            return;
+        }
+
+        int x1, y1, x2, y2;
+        uint32_t col;
+
+        if (!cmd_parse_i32(cl.argv[1], &x1) ||
+            !cmd_parse_i32(cl.argv[2], &y1) ||
+            !cmd_parse_i32(cl.argv[3], &x2) ||
+            !cmd_parse_i32(cl.argv[4], &y2) ||
+            !cmd_parse_color(cl.argv[5], &col)) 
+        {
+            console_write(con, "Invalid args. Example: square 20 20 40 40 RED\n");
+            return;
+        }
+
+        console_cursor_render(con, 0);
+
+        draw_rectangle(con->fb, x1, y1, x2, y2, (int)col);
+        return;
+    }
+
+    if (streq(cl.cmd, "fillrect")) {
+        // fillrect x1 y1 x2 y2 COLOR
+        if (argc != 6) {
+            console_write(con, "Usage: fillrect x1 y1 x2 y2 COLOR\n");
+            return;
+        }
+
+        int x1, y1, x2, y2;
+        uint32_t col;
+
+        if (!cmd_parse_i32(cl.argv[1], &x1) ||
+            !cmd_parse_i32(cl.argv[2], &y1) ||
+            !cmd_parse_i32(cl.argv[3], &x2) ||
+            !cmd_parse_i32(cl.argv[4], &y2) ||
+            !cmd_parse_color(cl.argv[5], &col)) {
+            console_write(con, "Invalid args.\n");
+            return;
+        }
+
+        console_cursor_render(con, 0);
+        draw_filled_rectangle(con->fb, x1, y1, x2, y2, (int)col);
+        return;
+    }
+
+    console_write(con, "Unknown command: ");
+    console_write(con, cl.cmd);
+    console_putc(con, '\n');
 }
