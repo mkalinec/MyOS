@@ -5,7 +5,5 @@
 
 
 bool check_for_framebuffer();
-void draw_rectangle(struct limine_framebuffer *framebuffer, int start_x, int start_y, int end_x, int end_y);
-
-void draw_line(struct limine_framebuffer *framebuffer);
-void undraw_line(struct limine_framebuffer *framebuffer);
+void draw_rectangle(struct limine_framebuffer *framebuffer, int start_x, int start_y, int end_x, int end_y, int color);
+void draw_line(struct limine_framebuffer *framebuffer, int start_x, int start_y, int end_x, int end_y, int color);

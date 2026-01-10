@@ -14,35 +14,79 @@ bool check_for_framebuffer(struct limine_framebuffer_request *framebuffer_reques
     return false;
 }
 
-void draw_rectangle(struct limine_framebuffer *framebuffer, int start_x, int start_y, int end_x, int end_y){
-    volatile uint32_t *fb_ptr = framebuffer->address;
-    
-    for (uint32_t x = start_x; x < end_x; x++){
-        uint32_t index_top = start_y * (framebuffer->pitch / 4) + x;
-        uint32_t index_bottom = end_y * (framebuffer->pitch / 4) + x;
-        fb_ptr[index_top] = 0xffffff;
-        fb_ptr[index_bottom] = 0xffffff;
+void draw_rectangle(struct limine_framebuffer *fb,
+                    int start_x, int start_y,
+                    int end_x,   int end_y,
+                    int color)
+{
+    volatile uint32_t *pixels = fb->address;
+    int pixels_per_row = fb->pitch / 4;
+
+    // top and bottom
+    for (int x = start_x; x <= end_x; x++) {
+        pixels[start_y * pixels_per_row + x] = color;
+        pixels[end_y   * pixels_per_row + x] = color;
     }
 
-    for (uint32_t y = start_y; y < end_y; y++){
-        uint32_t index_left =  y * (framebuffer->pitch / 4) + start_x;
-        uint32_t index_right = y * (framebuffer->pitch / 4) + end_x;
-        fb_ptr[index_left] = 0xffffff;
-        fb_ptr[index_right] = 0xffffff;
+    // left and right
+    for (int y = start_y; y <= end_y; y++) {
+        pixels[y * pixels_per_row + start_x] = color;
+        pixels[y * pixels_per_row + end_x]   = color;
     }
 }
 
-//just a test functions
-void draw_line(struct limine_framebuffer *framebuffer){
-    for (size_t i = 0; i < 300; i++) {
-        volatile uint32_t *fb_ptr = framebuffer->address;
-        fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
+
+void draw_line(struct limine_framebuffer *fb,
+               int start_x, int start_y,
+               int end_x,   int end_y,
+               int color)
+{
+    volatile uint32_t *pixels = fb->address;
+    int pixels_per_row = fb->pitch / 4;
+
+    int delta_x = end_x - start_x;
+    int delta_y = end_y - start_y;
+
+    int step_x = (delta_x >= 0) ? 1 : -1;
+    int step_y = (delta_y >= 0) ? 1 : -1;
+
+    int distance_x = (delta_x >= 0) ? delta_x : -delta_x;
+    int distance_y = (delta_y >= 0) ? delta_y : -delta_y;
+
+    int current_x = start_x;
+    int current_y = start_y;
+
+    if (distance_x >= distance_y) {
+        int error_accumulator = distance_x / 2;
+
+        while (current_x != end_x) {
+            pixels[current_y * pixels_per_row + current_x] = color;
+
+            error_accumulator -= distance_y;
+            if (error_accumulator < 0) {
+                current_y += step_y;
+                error_accumulator += distance_x;
+            }
+
+            current_x += step_x;
+        }
     }
-}
-// Note: we assume the framebuffer model is RGB with 32-bit pixels.
-void undraw_line(struct limine_framebuffer *framebuffer){
-    for (size_t i = 0; i < 300; i++) {
-        volatile uint32_t *fb_ptr = framebuffer->address;
-        fb_ptr[i * (framebuffer->pitch / 4) + i] = 0x000000;
+
+    else {
+        int error_accumulator = distance_y / 2;
+
+        while (current_y != end_y) {
+            pixels[current_y * pixels_per_row + current_x] = color;
+
+            error_accumulator -= distance_x;
+            if (error_accumulator < 0) {
+                current_x += step_x;
+                error_accumulator += distance_y;
+            }
+
+            current_y += step_y;
+        }
     }
+
+    pixels[current_y * pixels_per_row + current_x] = color;
 }

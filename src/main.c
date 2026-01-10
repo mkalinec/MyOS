@@ -52,13 +52,16 @@ void kmain(void) {
     while (1) {
         c = kbd_get_char();
         if (c == 'a') {
-            draw_line(framebuffer);
+            draw_line(framebuffer, 0, 0, 300, 300, 0xFFFFFF);
         }
         if (c == 'b') {
-            undraw_line(framebuffer);
+            draw_line(framebuffer, 0, 0, 300, 300, 0x000000);
         }
         if (c == 'c'){
-            draw_rectangle(framebuffer, 10, 10, 200, 500);
+            draw_rectangle(framebuffer, 10, 10, 200, 500, 0x0000FF);
+        }
+        if (c == 'd'){
+            draw_line(framebuffer, 20, 30, 800, 100, 0xFF0000);
         }
 
 
