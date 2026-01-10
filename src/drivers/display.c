@@ -261,3 +261,17 @@ void draw_text(struct limine_framebuffer *fb,
         text++;
     }
 }
+
+void clear_screen(struct limine_framebuffer* fb,
+                  uint32_t color) 
+{
+    uint32_t* pixels = (uint32_t*)fb->address;
+    size_t pitch_pixels = fb->pitch / 4;
+
+    for (size_t y = 0; y < fb->height; y++) {
+        uint32_t* row = pixels + y * pitch_pixels;
+        for (size_t x = 0; x < fb->width; x++) {
+            row[x] = color;
+        }
+    }
+}

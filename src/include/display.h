@@ -63,3 +63,6 @@ void draw_text(struct limine_framebuffer *fb,
                const char *text,
                int x, int y,
                uint32_t color);
+
+void clear_screen(struct limine_framebuffer* fb,
+                  uint32_t color);

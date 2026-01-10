@@ -81,6 +81,9 @@ void kmain(void) {
         if (c == 'i'){
             draw_filled_triangle(framebuffer, 200, 50, 600, 600, 800, 120, COLOR_BROWN);
         }
+        if (c == ' '){
+            clear_screen(framebuffer, COLOR_BLACK);
+        }
 
 
     }
