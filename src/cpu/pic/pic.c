@@ -1,0 +1,70 @@
+#include "pic.h"
+
+// Inline assembly for port I/O
+static inline void outb(uint16_t port, uint8_t val) {
+    __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
+}
+
+static inline uint8_t inb(uint16_t port) {
+    uint8_t ret;
+    __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    return ret;
+}
+
+// Remap PIC to avoid conflicts with CPU exceptions
+void pic_remap(int offset1, int offset2) {
+    uint8_t a1, a2;
+
+    // Save masks
+    a1 = inb(PIC1_DATA);
+    a2 = inb(PIC2_DATA);
+
+    // Start initialization in cascade mode
+    outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
+    outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
+
+    // Set vector offsets
+    outb(PIC1_DATA, offset1); // Master PIC vector offset
+    outb(PIC2_DATA, offset2); // Slave PIC vector offset
+
+    // Tell Master PIC that there is a slave at IRQ2
+    outb(PIC1_DATA, 0x04);
+    outb(PIC2_DATA, 0x02);
+
+    // Set 8086/88 mode
+    outb(PIC1_DATA, ICW4_8086);
+    outb(PIC2_DATA, ICW4_8086);
+
+    // Restore saved masks
+    outb(PIC1_DATA, a1);
+    outb(PIC2_DATA, a2);
+}
+
+// Mask all IRQs using a bitmask
+void pic_set_mask(uint8_t mask) {
+    outb(PIC1_DATA, mask);
+}
+
+// Unmask a specific IRQ
+void pic_clear_mask(uint8_t irq) {
+    uint16_t port;
+    uint8_t value;
+
+    if (irq < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        irq -= 8;
+    }
+
+    value = inb(port) & ~(1 << irq);
+    outb(port, value);
+}
+
+// Send EOI after handling an IRQ
+void pic_send_eoi(uint8_t irq) {
+    if (irq >= 8) {
+        outb(PIC2_COMMAND, PIC_EOI);
+    }
+    outb(PIC1_COMMAND, PIC_EOI);
+}

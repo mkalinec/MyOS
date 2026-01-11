@@ -15,6 +15,11 @@
 #include "cpu/interrupts/isr.h"
 #include "cpu/interrupts/idt.h"
 
+
+#include "cpu/pic/irq.h"
+
+#include "cpu/pic/pic.h"
+
 #include "cpu/gdt/gdt.h"
 
 
@@ -35,6 +40,9 @@ static void handle_command(console_t *con, char *line);
 
 uint64_t hhdm_offset;
 
+extern void irq1_handler(void);
+
+
 
 void kmain(void) {
     // Ensure the bootloader actually understands our base revision (see spec).
@@ -46,10 +54,18 @@ void kmain(void) {
         hcf();
     }
 
-   init_gdt();
-   flush_gdt();
+    init_gdt();
+    flush_gdt();
 
-   idt_init();
+    idt_init();
+
+    pic_remap(0x20, 0x28);
+    pic_clear_mask(1);
+    idt_set_descriptor(0x21, irq1_handler, 0x8E);
+
+    asm volatile ("sti");  
+
+
 
 
     //asm volatile ("cli");
