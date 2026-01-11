@@ -9,22 +9,16 @@
 #include "include/console.h"
 #include "lib/string.h"
 #include "include/cmd.h"
+#include "liballoc.h"
 
 
-__attribute__((used, section(".limine_requests")))
-static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(4);
+#include "cpu/interrupts/isr.h"
+#include "cpu/interrupts/idt.h"
 
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST_ID,
-    .revision = 0
-};
+#include "cpu/gdt/gdt.h"
 
-__attribute__((used, section(".limine_requests_start")))
-static volatile uint64_t limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
 
-__attribute__((used, section(".limine_requests_end")))
-static volatile uint64_t limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
+#include "limine_attribute.h"
 
 
 // Halt and catch fire function.
@@ -34,7 +28,12 @@ static void hcf(void) {
     }
 }
 
+
+
+
 static void handle_command(console_t *con, char *line);
+
+uint64_t hhdm_offset;
 
 
 void kmain(void) {
@@ -47,13 +46,34 @@ void kmain(void) {
         hcf();
     }
 
+   init_gdt();
+   flush_gdt();
+
+   idt_init();
+
+
+    //asm volatile ("cli");
+
+
 
     // Fetch the first framebuffer.
     struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
+
     console_t con;
     console_init(&con, framebuffer, 0xFFFFFF, 0x000000);
     console_cursor_set_blink(&con, 20000000000000000); // doladíš podľa rýchlosti slučky
+
+
+
+
+    if (!hhdm_request.response) {
+        draw_rectangle(framebuffer, 100, 100, 500, 500, COLOR_RED);
+    }
+
+    hhdm_offset = hhdm_request.response->offset;
+
+
 
     char line[128];
 
@@ -65,7 +85,8 @@ void kmain(void) {
 }
 
 
-static void handle_command(console_t *con, char *line) {
+static void handle_command(console_t *con, char *line) 
+{
     cmdline_t cl;
     int argc = cmd_tokenize(line, &cl);
     if (argc <= 0) return;
@@ -122,6 +143,59 @@ static void handle_command(console_t *con, char *line) {
 
         console_cursor_render(con, 0);
         draw_filled_rectangle(con->fb, x1, y1, x2, y2, (int)col);
+        return;
+    }
+
+    if (streq(cl.cmd, "circle")) {
+        if (argc != 5) {
+            console_write(con, "Usage: circle x y radius COLOR\n");
+            return;
+        }
+
+        int x, y, rad;
+        uint32_t col;
+
+        if (!cmd_parse_i32(cl.argv[1], &x) ||
+            !cmd_parse_i32(cl.argv[2], &y) ||
+            !cmd_parse_i32(cl.argv[3], &rad) ||
+            !cmd_parse_color(cl.argv[4], &col)) {
+            console_write(con, "Invalid args.\n");
+            return;
+        }
+
+        console_cursor_render(con, 0);
+        draw_circle(con->fb, x, y, rad, (int)col);
+        return;
+    }
+
+    if (streq(cl.cmd, "testalloc")) {
+        void* a = malloc(100);
+        void* b = malloc(4096);
+        void* c = malloc(8000);
+//
+        free(a);
+        free(b);
+        free(c);
+
+        console_write(con, "liballoc OK\n");
+
+        return;
+    }
+
+    if (streq(cl.cmd, "testzero")) {
+
+        int a = 30;
+        a++;
+        int b = 0;
+        int c = a/b; 
+
+      //
+    //    for(int i = 0; i < g_timer_ticks; i++)
+            console_write(con, "all OK\n");
+
+        
+
+
         return;
     }
 

@@ -17,3 +17,4 @@ obj/src/drivers/keyboard.c.o
 obj/src/main.c.o
 obj/src/drivers/memory.c.d
 obj/src/drivers/memory.c.o
+qemu.log

@@ -14,7 +14,7 @@ bool check_for_framebuffer(struct limine_framebuffer_request *framebuffer_reques
     return false;
 }
 
-static inline void draw_pixel(struct limine_framebuffer *framebuffer,
+void draw_pixel(struct limine_framebuffer *framebuffer,
                               uint32_t x, uint32_t y,
                               uint32_t color) {
     if (!framebuffer) return;
