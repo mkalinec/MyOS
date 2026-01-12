@@ -1,69 +1,85 @@
 #include "gdt.h"
+#include <stdint.h>
 
-// GDT entries: null, kernel code, kernel data, user code, user data
-uint64_t gdt_entries[5];
-struct GDTR gdtr;
+extern void gdt_flush(uintptr_t addr);
 
-// Helper macros for descriptor creation
-#define SEG_TYPE_CODE 0b1011  // execute/read, accessed
-#define SEG_TYPE_DATA 0b0011  // read/write, accessed
-#define SEG_PRESENT   (1 << 15)
-#define SEG_LONG_MODE (1 << 21)
+struct gdt_entry_struct gdt_entries[5];
+struct gdt_ptr_struct gdt_ptr;
 
-// Create descriptor
-static uint64_t make_gdt_entry(uint8_t type, uint8_t dpl, int long_mode) {
-    uint64_t entry = 0;
-    entry |= ((uint64_t)type) << 8;    // type bits
-    entry |= (1ULL << 12);             // system=0 (code/data)
-    entry |= ((uint64_t)dpl & 0b11) << 13; // DPL
-    entry |= (1ULL << 15);             // present
-    if (long_mode) entry |= (1ULL << 21); // long mode bit
-    return entry << 32;                // upper 32 bits
+
+struct gdt_tss_entry_struct gdt_tss_entries[1];
+struct gdt_tss_ptr_struct gdt_tss_ptr;
+
+void init_gdt(){
+    gdt_ptr.limit = (sizeof(struct gdt_entry_struct) * 5) - 1;
+    gdt_ptr.base = (uintptr_t)gdt_entries;
+
+    set_gdt_gate(0, 0, 0, 0, 0); //Null segment
+
+    //Kernel code segment
+    set_gdt_gate(1, 0, 0xFFFFF, GDT_ACCESS_PRESENT_BIT |
+                                GDT_ACCESS_DESCRIPTOR_TYPE_CODE_DATA_SEG |
+                                GDT_ACCESS_EXECUTABLE_BIT  |
+                                GDT_ACCESS_DESCRIPTOR_PRIVILEGE_HIGH |
+                                GDT_ACCESS_RW_BIT,
+                                GDT_FLAG_GRANULARITY | GDT_FLAG_LONG);
+
+    //Kernel data segment
+    set_gdt_gate(2, 0, 0xFFFFF, GDT_ACCESS_PRESENT_BIT |
+                                GDT_ACCESS_DESCRIPTOR_TYPE_CODE_DATA_SEG |
+                                GDT_ACCESS_DESCRIPTOR_PRIVILEGE_HIGH |
+                                GDT_ACCESS_RW_BIT,
+                                GDT_FLAG_GRANULARITY);
+
+    //User code segment
+    set_gdt_gate(3, 0, 0xFFFFF, GDT_ACCESS_PRESENT_BIT |
+                                GDT_ACCESS_DESCRIPTOR_PRIVILEGE_LOW |
+                                GDT_ACCESS_DESCRIPTOR_TYPE_CODE_DATA_SEG |
+                                GDT_ACCESS_EXECUTABLE_BIT |
+                                GDT_ACCESS_RW_BIT,
+                                GDT_FLAG_GRANULARITY | GDT_FLAG_LONG);
+            
+    //User data segment
+    set_gdt_gate(4, 0, 0xFFFFF, GDT_ACCESS_PRESENT_BIT |
+                                GDT_ACCESS_DESCRIPTOR_PRIVILEGE_LOW |
+                                GDT_ACCESS_DESCRIPTOR_TYPE_CODE_DATA_SEG |
+                                GDT_ACCESS_RW_BIT,
+                                GDT_FLAG_GRANULARITY);
+
+    // Note
+    // We are in long mode so base and limit is ignored
+
+    gdt_flush((uintptr_t)&gdt_ptr);
 }
 
-void init_gdt() {
-    // Null descriptor
-    gdt_entries[0] = 0;
 
-    // Kernel code: selector 0x08, ring 0, long mode
-    gdt_entries[1] = make_gdt_entry(SEG_TYPE_CODE, 0, 1);
+void set_gdt_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t flags){
+    gdt_entries[num].base_low    = (base & 0xFFFF);
+    gdt_entries[num].base_middle = (base >> 16) & 0xFF;
+    gdt_entries[num].base_high   = (base >> 24) & 0xFF;
 
-    // Kernel data: selector 0x10, ring 0
-    gdt_entries[2] = make_gdt_entry(SEG_TYPE_DATA, 0, 1);
+    // lower half of flags is actualy limit
+    gdt_entries[num].limit  = (limit & 0xFFFF);
+    gdt_entries[num].flags  = (limit >> 16) & 0x0F;
 
-    // User code: selector 0x18, ring 3, long mode
-    gdt_entries[3] = make_gdt_entry(SEG_TYPE_CODE, 3, 1);
+    gdt_entries[num].flags |= (flags & 0x0F);
 
-    // User data: selector 0x20, ring 3
-    gdt_entries[4] = make_gdt_entry(SEG_TYPE_DATA, 3, 1);
-
-    // Set GDTR
-    gdtr.limit = sizeof(gdt_entries) - 1;
-    gdtr.base  = (uint64_t)&gdt_entries;
+    gdt_entries[num].access = access;
 }
 
-void flush_gdt() {
-    // Load GDTR
-    asm volatile("lgdt %0" : : "m"(gdtr));
 
-    // Reload segment registers
-    asm volatile(
-        "mov $0x10, %%ax\n"   // kernel data selector
-        "mov %%ax, %%ds\n"
-        "mov %%ax, %%es\n"
-        "mov %%ax, %%fs\n"
-        "mov %%ax, %%gs\n"
-        "mov %%ax, %%ss\n"
-        ::: "ax"
-    );
 
-    // Reload CS via far return
-    asm volatile(
-        "pushq $0x08\n"        // kernel code selector
-        "lea 1f(%%rip), %%rax\n"
-        "pushq %%rax\n"
-        "lretq\n"
-        "1:\n"
-        ::: "rax"
-    );
+void set_gdt_tss_gate(uint32_t num, uint64_t base, uint32_t limit, uint8_t access, uint8_t flags){
+    gdt_tss_entries[num].base_low    = (base & 0xFFFF);
+    gdt_tss_entries[num].base_middle = (base >> 16) & 0xFF;
+    gdt_tss_entries[num].base_high   = (base >> 24) & 0xFF;
+    gdt_tss_entries[num].base_higher = (base >> 32) & 0xFFFFFFFF;
+
+    // lower half of flags is actualy limit
+    gdt_tss_entries[num].limit  = (limit & 0xFFFF);
+    gdt_tss_entries[num].flags  = (limit >> 16) & 0x0F;
+
+    gdt_tss_entries[num].flags |= (flags & 0x0F);
+
+    gdt_tss_entries[num].access = access;
 }

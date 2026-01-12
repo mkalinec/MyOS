@@ -14,19 +14,12 @@ static inline void outb(uint16_t port, uint8_t val) {
 }
 
 // Keyboard IRQ1 handler in C
-void irq1_handler_c() {
-    // Read scancode to acknowledge keyboard
+void irq1_handler_c(void) {
+    volatile uint8_t scancode = inb(0x60); // ACK keyboard controller
+    (void)scancode;                        // silence warning
 
-    
-
-    uint8_t scancode = inb(0x60);
-
-    // Optional: store scancode in buffer
-
-    // Send EOI
-    pic_send_eoi(1);
+    pic_send_eoi(1);                       // ACK PIC
 }
-
 // Timer IRQ0 handler in C (optional)
 void irq0_handler_c() {
     // This would run every timer tick

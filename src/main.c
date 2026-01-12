@@ -45,7 +45,6 @@ extern void irq1_handler(void);
 
 
 void kmain(void) {
-    // Ensure the bootloader actually understands our base revision (see spec).
     if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) {
         hcf();
     }
@@ -54,21 +53,21 @@ void kmain(void) {
         hcf();
     }
 
+    if (!hhdm_request.response) {
+        hcf();
+    }
+
+    hhdm_offset = hhdm_request.response->offset;
+
+
     init_gdt();
-    flush_gdt();
+//    flush_gdt();
 
-    idt_init();
-
+    idt_init();                                // load IDT
+    idt_set_descriptor(0x21, irq1_handler, 0x8E); // install IRQ1
     pic_remap(0x20, 0x28);
-    pic_clear_mask(1);
-    idt_set_descriptor(0x21, irq1_handler, 0x8E);
-
-    asm volatile ("sti");  
-
-
-
-
-    //asm volatile ("cli");
+    pic_clear_mask(1);                         // unmask keyboard
+    asm volatile ("cli");                      // enable IRQs LAST
 
 
 
@@ -79,16 +78,6 @@ void kmain(void) {
     console_t con;
     console_init(&con, framebuffer, 0xFFFFFF, 0x000000);
     console_cursor_set_blink(&con, 20000000000000000); // doladíš podľa rýchlosti slučky
-
-
-
-
-    if (!hhdm_request.response) {
-        draw_rectangle(framebuffer, 100, 100, 500, 500, COLOR_RED);
-    }
-
-    hhdm_offset = hhdm_request.response->offset;
-
 
 
     char line[128];
