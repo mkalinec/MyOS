@@ -52,3 +52,10 @@ isr_stub_table:
     dq isr_stub_%+i ; use DQ instead if targeting 64-bit
 %assign i i+1 
 %endrep
+
+global interrupt_handler_asm
+extern interrupt_handler_c
+
+interrupt_handler_asm:
+    call interrupt_handler_c
+    iretq

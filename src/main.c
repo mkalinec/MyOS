@@ -59,11 +59,12 @@ void kmain(void) {
 
 
     init_gdt();
+    idt_init();
 
-    idt_init();                                // load IDT
-   // idt_set_descriptor(0x0, irq1_handler, 0x8E); // divide error
-   // pic_remap(0x20, 0x28);
-   // pic_clear_mask(1);                         // unmask keyboard
+    // BUG!!! instead calling interrupt_handler it calls exception_handler. shit
+    pic_remap(0x20, 0x28);
+    idt_set_descriptor(0x21, interrupt_handler_asm, 0x8E);
+    pic_clear_mask(1);                         // unmask keyboard
     asm volatile ("sti");                      // enable IRQs LAST
 
 
