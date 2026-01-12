@@ -1,8 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/limine.h"
-#include "../include/font.h"
+#include "limine.h"
+#include "font.h"
 
 
 bool check_for_framebuffer();

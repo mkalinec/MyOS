@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
-#include "../include/limine.h"
+#include "limine.h"
 
 typedef struct console {
     struct limine_framebuffer *fb;

@@ -1,5 +1,5 @@
-#include "../include/cmd.h"
-#include "../lib/string.h"
+#include "cmd.h"
+#include "string.h"
 
 static int is_space(char c) {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';

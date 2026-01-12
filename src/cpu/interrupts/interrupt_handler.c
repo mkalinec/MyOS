@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "../../include/io.h"
+#include "io.h"
 
 /*
 void keyboard_interrupt_handler_c(void)

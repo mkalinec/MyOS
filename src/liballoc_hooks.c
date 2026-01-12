@@ -1,7 +1,7 @@
 // pmm_liballoc.c
 #include <stdint.h>
 #include <stddef.h>
-#include "include/limine.h"
+#include "limine.h"
 
 #define PAGE_SIZE 4096
 #define MAX_PHYS_PAGES 1048576  // 4GB / 4KB

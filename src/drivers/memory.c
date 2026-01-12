@@ -4,7 +4,7 @@
 // DO NOT remove or rename these functions, or stuff will eventually break!
 // They CAN be moved to a different .c file.
 
-#include "../include/memory.h"
+#include "memory.h"
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     uint8_t *restrict pdest = (uint8_t *restrict)dest;

@@ -1,19 +1,19 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "include/limine.h"
-#include "include/keyboard.h"
-#include "include/memory.h"
-#include "include/display.h"
-#include "include/colors.h"
-#include "include/console.h"
-#include "lib/string.h"
-#include "include/cmd.h"
+#include "limine.h"
+#include "keyboard.h"
+#include "memory.h"
+#include "display.h"
+#include "colors.h"
+#include "console.h"
+#include "string.h"
+#include "cmd.h"
 #include "liballoc.h"
-#include "cpu/interrupts/idt.h"
-#include "cpu/pic/irq.h"
-#include "cpu/pic/pic.h"
-#include "cpu/gdt/gdt.h"
+#include "idt.h"
+#include "irq.h"
+#include "pic.h"
+#include "gdt.h"
 #include "limine_attribute.h"
 
 // Halt and catch fire function.

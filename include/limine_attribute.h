@@ -1,4 +1,4 @@
-#include "include/limine.h"
+#include "limine.h"
 
 #include <stdint.h>
 #include <stddef.h>

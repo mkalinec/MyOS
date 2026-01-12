@@ -1,6 +1,6 @@
-#include "include/console.h"
-#include "include/display.h"
-#include "include/keyboard.h"
+#include "console.h"
+#include "display.h"
+#include "keyboard.h"
 #include <stdint.h>
 #include <stddef.h>
 

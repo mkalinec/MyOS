@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "../cpu/pic/pic.h"
-#include "../include/io.h"
+#include "pic.h"
+#include "io.h"
 
 /* ================= PORTS ================= */
 
