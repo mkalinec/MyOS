@@ -12,7 +12,6 @@
 #include "liballoc.h"
 
 
-#include "cpu/interrupts/isr.h"
 #include "cpu/interrupts/idt.h"
 
 
@@ -40,7 +39,6 @@ static void handle_command(console_t *con, char *line);
 
 uint64_t hhdm_offset;
 
-extern void irq1_handler(void);
 
 
 
@@ -61,13 +59,12 @@ void kmain(void) {
 
 
     init_gdt();
-//    flush_gdt();
 
     idt_init();                                // load IDT
-    idt_set_descriptor(0x21, irq1_handler, 0x8E); // install IRQ1
-    pic_remap(0x20, 0x28);
-    pic_clear_mask(1);                         // unmask keyboard
-    asm volatile ("cli");                      // enable IRQs LAST
+    idt_set_descriptor(0x0, irq1_handler, 0x8E); // divide error
+   // pic_remap(0x20, 0x28);
+   // pic_clear_mask(1);                         // unmask keyboard
+    asm volatile ("sti");                      // enable IRQs LAST
 
 
 
@@ -190,13 +187,13 @@ static void handle_command(console_t *con, char *line)
     if (streq(cl.cmd, "testzero")) {
 
         int a = 30;
-        a++;
         int b = 0;
         int c = a/b; 
+        c++;
 
-      //
-    //    for(int i = 0; i < g_timer_ticks; i++)
-            console_write(con, "all OK\n");
+      
+       for(int i = 0; i < c; i++)
+            console_write(con, "dividing by zero successful\n");    // this shoud never see this text
 
         
 
