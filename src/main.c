@@ -10,20 +10,11 @@
 #include "lib/string.h"
 #include "include/cmd.h"
 #include "liballoc.h"
-
-
 #include "cpu/interrupts/idt.h"
-
-
 #include "cpu/pic/irq.h"
-
 #include "cpu/pic/pic.h"
-
 #include "cpu/gdt/gdt.h"
-
-
 #include "limine_attribute.h"
-
 
 // Halt and catch fire function.
 static void hcf(void) {
@@ -33,12 +24,9 @@ static void hcf(void) {
 }
 
 
-
-
 static void handle_command(console_t *con, char *line);
 
 uint64_t hhdm_offset;
-
 
 
 
@@ -58,12 +46,13 @@ void kmain(void) {
     hhdm_offset = hhdm_request.response->offset;
 
 
+
     init_gdt();
     idt_init();
 
-    
+
     pic_remap(0x20, 0x28);
-    idt_set_descriptor(0x21, interrupt_handler_asm, 0x8E);
+    idt_set_descriptor(0x21, keyboard_interrupt_handler_asm, 0x8E);
     pic_clear_mask(1);                         // unmask keyboard
     asm volatile ("sti");                      // enable IRQs LAST
 

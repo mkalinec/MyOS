@@ -1,14 +1,49 @@
-#include "../include/limine.h"
-#include "../include/keyboard.h"
+#include <stdint.h>
+#include "../cpu/pic/pic.h"
+#include "../include/io.h"
 
-uint8_t kbd_read_scancode() {
-    // čakáme, kým bude dostupný dátový bajt
-    while (!(inb(KBD_STATUS) & 0x01));
-    return inb(KBD_DATA);
+/* ================= PORTS ================= */
+
+#define KBD_DATA   0x60
+
+/* ================= RING BUFFER ================= */
+
+#define KBD_BUFFER_SIZE 128
+
+static char kbd_buffer[KBD_BUFFER_SIZE];
+static volatile int kbd_head = 0;
+static volatile int kbd_tail = 0;
+
+static void kbd_buffer_push(char c) {
+    int next = (kbd_head + 1) % KBD_BUFFER_SIZE;
+    if (next != kbd_tail) {
+        kbd_buffer[kbd_head] = c;
+        kbd_head = next;
+    }
 }
 
-char scancode_to_ascii(uint8_t scancode, int shift) {
-    switch (scancode) {
+static char kbd_buffer_pop(void) {
+    while (kbd_head == kbd_tail);
+    char c = kbd_buffer[kbd_tail];
+    kbd_tail = (kbd_tail + 1) % KBD_BUFFER_SIZE;
+    return c;
+}
+
+/* ================= SHIFT ================= */
+
+static int shift_pressed = 0;
+
+static void update_shift(uint8_t sc) {
+    if (sc == 0x2A || sc == 0x36)
+        shift_pressed = 1;
+    else if (sc == 0xAA || sc == 0xB6)
+        shift_pressed = 0;
+}
+
+/* ================= SCANCODE MAP ================= */
+
+static char scancode_to_ascii(uint8_t sc, int shift) {
+    switch (sc) {
         case 0x02: return shift ? '!' : '1';
         case 0x03: return shift ? '@' : '2';
         case 0x04: return shift ? '#' : '3';
@@ -47,42 +82,41 @@ char scancode_to_ascii(uint8_t scancode, int shift) {
         case 0x15: return shift ? 'Y' : 'y';
         case 0x2C: return shift ? 'Z' : 'z';
 
-        case 0x39: return ' ';   // Space
-        case 0x0E: return '\b';  // Backspace
-        case 0x1C: return '\n';  // Enter
-        default: return 0;       // Unsupported
+        case 0x39: return ' ';
+        case 0x0E: return '\b';
+        case 0x1C: return '\n';
+
+        default: return 0;
     }
 }
 
-int shift_pressed = 0;
+/* ================= IRQ HANDLER ================= */
 
-void update_shift(uint8_t scancode) {
-    // Left Shift: 0x2A, Right Shift: 0x36
-    if (scancode == 0x2A || scancode == 0x36) shift_pressed = 1;
-    else if (scancode == 0xAA || scancode == 0xB6) shift_pressed = 0;
-}
+void keyboard_interrupt_handler_c(void) {
+    uint8_t sc = inb(KBD_DATA);
 
-char kbd_get_char() {
-    while (1) {
-        uint8_t sc = kbd_read_scancode();
+    update_shift(sc);
 
-        // Update shift stav
-        update_shift(sc);
-
-        // Ignorujeme uvolnenie kľúčov, okrem shift
-        if (sc & 0x80) continue;
-
+    if (!(sc & 0x80)) {
         char c = scancode_to_ascii(sc, shift_pressed);
-        if (c) return c;
+        if (c) {
+            kbd_buffer_push(c);
+        }
     }
+
+    pic_send_eoi(1);
 }
 
-static inline uint8_t inb(uint16_t port) {
-    uint8_t ret;
-    __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
-    return ret;
+/* ================= PUBLIC API ================= */
+
+char kbd_get_char(void) {
+    return kbd_buffer_pop();
 }
 
-static inline void outb(uint16_t port, uint8_t val) {
-    __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
-}
+/* ================= PORT IO ================= */
+
+//static inline uint8_t inb(uint16_t port) {
+//    uint8_t ret;
+//    __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+//    return ret;
+//}

@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include "../../include/io.h"
 
-void interrupt_handler_c(void)
+/*
+void keyboard_interrupt_handler_c(void)
 {
     uint8_t scancode = inb(0x60);
 
@@ -13,3 +14,4 @@ void interrupt_handler_c(void)
     : "al"
     );
 }
+    */

@@ -53,14 +53,14 @@ isr_stub_table:
 %assign i i+1 
 %endrep
 
-global interrupt_handler_asm
-extern interrupt_handler_c
+global keyboard_interrupt_handler_asm
+extern keyboard_interrupt_handler_c
 
-interrupt_handler_asm:
+keyboard_interrupt_handler_asm:
     push rbp
     mov rbp, rsp
 
-    call interrupt_handler_c
+    call keyboard_interrupt_handler_c
 
     pop rbp
     iretq
