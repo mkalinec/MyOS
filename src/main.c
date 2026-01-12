@@ -61,7 +61,7 @@ void kmain(void) {
     init_gdt();
 
     idt_init();                                // load IDT
-    idt_set_descriptor(0x0, irq1_handler, 0x8E); // divide error
+   // idt_set_descriptor(0x0, irq1_handler, 0x8E); // divide error
    // pic_remap(0x20, 0x28);
    // pic_clear_mask(1);                         // unmask keyboard
     asm volatile ("sti");                      // enable IRQs LAST
