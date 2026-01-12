@@ -1,6 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     const char *cmd;
@@ -11,4 +12,4 @@ typedef struct {
 int cmd_tokenize(char *line, cmdline_t *out);
 int cmd_parse_i32(const char *s, int *out);
 int cmd_parse_color(const char *s, uint32_t *out);
-int streq(const char *a, const char *b);
+bool streq(const char *a, const char *b);

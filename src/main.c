@@ -7,7 +7,7 @@
 #include "display.h"
 #include "colors.h"
 #include "console.h"
-#include "string.h"
+#include <string.h>
 #include "cmd.h"
 #include "liballoc.h"
 #include "idt.h"
@@ -15,6 +15,15 @@
 #include "pic.h"
 #include "gdt.h"
 #include "limine_attribute.h"
+
+bool streq(const char* a, const char* b) {
+    while (*a && *b) {
+        if (*a != *b) return false;
+        a++;
+        b++;
+    }
+    return *a == *b;
+}
 
 // Halt and catch fire function.
 static void hcf(void) {
