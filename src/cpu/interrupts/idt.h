@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #define GDT_OFFSET_KERNEL_CODE 0x08
-#define IDT_MAX_DESCRIPTORS 32
+#define IDT_MAX_DESCRIPTORS 255
 
 typedef struct {
 	uint16_t    isr_low;      // The lower 16 bits of the ISR's address

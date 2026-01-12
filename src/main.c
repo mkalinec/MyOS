@@ -61,7 +61,7 @@ void kmain(void) {
     init_gdt();
     idt_init();
 
-    // BUG!!! instead calling interrupt_handler it calls exception_handler. shit
+    
     pic_remap(0x20, 0x28);
     idt_set_descriptor(0x21, interrupt_handler_asm, 0x8E);
     pic_clear_mask(1);                         // unmask keyboard

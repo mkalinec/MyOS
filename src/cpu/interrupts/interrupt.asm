@@ -57,5 +57,12 @@ global interrupt_handler_asm
 extern interrupt_handler_c
 
 interrupt_handler_asm:
+    push rbp
+    mov rbp, rsp
+
     call interrupt_handler_c
+
+    pop rbp
+    iretq
+
     iretq

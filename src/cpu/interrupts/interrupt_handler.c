@@ -12,8 +12,4 @@ void interrupt_handler_c(void)
     :
     : "al"
     );
-
-    for (;;) {
-        asm ("hlt");
-    }
 }
