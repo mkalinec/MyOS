@@ -14,14 +14,6 @@ static volatile struct limine_memmap_request memmap_request = {
     .revision = 0
 };
 
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_hhdm_request hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST_ID,
-    .revision = 0
-};
-
-
-
 uint64_t total_pages;
 uint8_t *pmm_bitmap;
 uint64_t bitmap_size;
@@ -32,7 +24,7 @@ uint64_t bitmap_start_page;
 uint64_t bitmap_end_page;
 
 struct limine_memmap_response *memmap;
-uint64_t hhdm;
+static uint64_t hhdm;
 
 void pmm_mark_free(uint64_t base, uint64_t length) {
     uint64_t start_page = base / PAGE_SIZE;
@@ -53,9 +45,9 @@ void pmm_mark_free(uint64_t base, uint64_t length) {
 
 
 
-void init_pmm(void){
+void init_pmm(uint64_t hhdm_offset){
     memmap = memmap_request.response;
-    hhdm = hhdm_request.response->offset;
+    hhdm = hhdm_offset;
 
     //calculate memory size
     uint64_t max_phys = 0;

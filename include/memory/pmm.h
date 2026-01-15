@@ -4,7 +4,7 @@
 
 #define PAGE_SIZE 4096
 
-void init_pmm(void);
+void init_pmm(uint64_t hhdm_offset);
 
 uint64_t *pmm_alloc_page(void);
 uint64_t *pmm_alloc_pages(uint64_t n);

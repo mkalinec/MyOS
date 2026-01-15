@@ -18,6 +18,7 @@
 #include "global_variables.h"
 #include "memory/pmm.h"
 #include "limine_attribute.h"
+#include "memory/vmm.h"
 
 bool streq(const char* a, const char* b) {
     while (*a && *b) {
@@ -38,7 +39,7 @@ static void hcf(void) {
 
 static void handle_command(console_t *con, char *line);
 
-uint64_t hhdm_offset;
+static uint64_t hhdm_offset;
 
 
 
@@ -59,8 +60,10 @@ void kmain(void) {
    //     hcf();
    // }
 
+   hhdm_offset = hhdm_request.response->offset;
 
-    init_pmm();
+
+    init_pmm(hhdm_offset);
 
     uint64_t p1 = (uint64_t)pmm_alloc_page();
     uint64_t p2 = (uint64_t)pmm_alloc_page();
@@ -68,8 +71,8 @@ void kmain(void) {
     pmm_free_page(&p1);
     pmm_free_page(&p2);
 
+    init_vmm(hhdm_offset);
 
-    //hhdm_offset = hhdm_request.response->offset;
 
 
 
