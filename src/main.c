@@ -14,6 +14,9 @@
 #include "irq.h"
 #include "pic.h"
 #include "gdt.h"
+
+#include "global_variables.h"
+#include "memory/pmm.h"
 #include "limine_attribute.h"
 
 bool streq(const char* a, const char* b) {
@@ -48,11 +51,25 @@ void kmain(void) {
         hcf();
     }
 
-    if (!hhdm_request.response) {
-        hcf();
-    }
+  //  if (!hhdm_request.response) {
+   //     hcf();
+   // }
 
-    hhdm_offset = hhdm_request.response->offset;
+   // if (!memmap_request.response){
+   //     hcf();
+   // }
+
+
+    init_pmm();
+
+    uint64_t p1 = (uint64_t)pmm_alloc_page();
+    uint64_t p2 = (uint64_t)pmm_alloc_page();
+
+    pmm_free_page(&p1);
+    pmm_free_page(&p2);
+
+
+    //hhdm_offset = hhdm_request.response->offset;
 
 
 
@@ -170,13 +187,13 @@ static void handle_command(console_t *con, char *line)
     }
 
     if (streq(cl.cmd, "testalloc")) {
-        void* a = malloc(100);
-        void* b = malloc(4096);
-        void* c = malloc(8000);
+   //     void* a = malloc(100);
+   //     void* b = malloc(4096);
+     //   void* c = malloc(8000);
 //
-        free(a);
-        free(b);
-        free(c);
+       // free(a);
+       // free(b);
+       // free(c);
 
         console_write(con, "liballoc OK\n");
 
