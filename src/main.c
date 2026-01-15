@@ -1,25 +1,26 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <string.h>
+
 #include "limine.h"
 #include "keyboard.h"
 #include "memory.h"
 #include "display.h"
 #include "colors.h"
 #include "console.h"
-#include <string.h>
 #include "cmd.h"
-#include "liballoc.h"
+
 #include "idt.h"
 #include "irq.h"
 #include "pic.h"
 #include "gdt.h"
 
 #include "global_variables.h"
-#include "memory/pmm.h"
 #include "limine_attribute.h"
-#include "memory/vmm.h"
 
+#include "memory/pmm.h"
+#include "memory/vmm.h"
 #include "memory/heap.h"
 #include "memory/malloc.h"
 
@@ -42,6 +43,7 @@ static void hcf(void) {
 
 static void handle_command(console_t *con, char *line);
 
+static struct limine_framebuffer *framebuffer;
 static uint64_t hhdm_offset;
 
 
@@ -55,67 +57,30 @@ void kmain(void) {
         hcf();
     }
 
-  //  if (!hhdm_request.response) {
-   //     hcf();
-   // }
+    if (!hhdm_request.response) {
+        hcf();
+    }
 
-   // if (!memmap_request.response){
-   //     hcf();
-   // }
+    // if (!memmap_request.response){
+    //     hcf();
+    // }
 
-   hhdm_offset = hhdm_request.response->offset;
-
-
-    init_pmm(hhdm_offset);
-
-    uint64_t p1 = (uint64_t)pmm_alloc_page();
-    uint64_t p2 = (uint64_t)pmm_alloc_page();
-
-    pmm_free_page(&p1);
-    pmm_free_page(&p2);
-
-    init_vmm(hhdm_offset);
-
-    uint64_t virt = 0xFFFF900000000000;
-
-    heap_init();
-    malloc_init();
-
-    int *x = malloc(sizeof(int));
-    *x = 42;
-
-    char *buf = malloc(1024);
-    free(x);
-    free(buf);
-
-
-
-void *page = pmm_alloc_page();      // HHDM pointer
-uint64_t phys = (uint64_t)page;
-
-vmm_map_page(virt, phys, PAGE_WRITE);
-
-uint64_t *ptr = (uint64_t *)virt;
-
-
-*ptr = 0xCAFEBABE;   // NESMIE CRASHNÚŤ
-
-
-
-
+    hhdm_offset = hhdm_request.response->offset;
+    framebuffer = framebuffer_request.response->framebuffers[0];
+    
     init_gdt();
     idt_init();
+
+    init_pmm(hhdm_offset);
+    init_vmm(hhdm_offset);
+    heap_init();
+    malloc_init();
 
 
     pic_remap(0x20, 0x28);
     idt_set_descriptor(0x21, keyboard_interrupt_handler_asm, 0x8E);
     pic_clear_mask(1);                         // unmask keyboard
     asm volatile ("sti");                      // enable IRQs LAST
-
-
-
-    // Fetch the first framebuffer.
-    struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
 
     console_t con;
@@ -216,16 +181,36 @@ static void handle_command(console_t *con, char *line)
         return;
     }
 
-    if (streq(cl.cmd, "testalloc")) {
-   //     void* a = malloc(100);
-   //     void* b = malloc(4096);
-     //   void* c = malloc(8000);
-//
-       // free(a);
-       // free(b);
-       // free(c);
+    if (streq(cl.cmd, "testmalloc")) {
+        void* a = malloc(100);
+        void* b = malloc(4096);
+        void* c = malloc(8000);
+        void* d = malloc(32000);
 
-        console_write(con, "liballoc OK\n");
+        int *e = malloc(sizeof(int));
+        *e = 69;
+        *e++;
+
+        int *f = malloc(sizeof(int)*3);
+        f[1] = 69;
+        f[2] = 420;
+        f[3] = f[1] * f[2] + 67;  // ultimate funny number
+
+        free(b);
+        free(e);
+        free(f);
+        free(c);
+
+        int *g = malloc(sizeof(int)*64000);
+        for (int i = 0; i < 64000; i++){
+            g[i] = i;
+        }
+
+        free(d);
+        free(g);
+        free(a);
+
+        console_write(con, "malloc OK\n");
 
         return;
     }
@@ -239,10 +224,7 @@ static void handle_command(console_t *con, char *line)
 
       
        for(int i = 0; i < c; i++)
-            console_write(con, "dividing by zero successful\n");    // this shoud never see this text
-
-        
-
+            console_write(con, "dividing by zero successful\n");    // you should never see this text
 
         return;
     }
