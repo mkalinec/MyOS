@@ -20,6 +20,9 @@
 #include "limine_attribute.h"
 #include "memory/vmm.h"
 
+#include "memory/heap.h"
+#include "memory/malloc.h"
+
 bool streq(const char* a, const char* b) {
     while (*a && *b) {
         if (*a != *b) return false;
@@ -72,6 +75,30 @@ void kmain(void) {
     pmm_free_page(&p2);
 
     init_vmm(hhdm_offset);
+
+    uint64_t virt = 0xFFFF900000000000;
+
+    heap_init();
+    malloc_init();
+
+    int *x = malloc(sizeof(int));
+    *x = 42;
+
+    char *buf = malloc(1024);
+    free(x);
+    free(buf);
+
+
+
+void *page = pmm_alloc_page();      // HHDM pointer
+uint64_t phys = (uint64_t)page;
+
+vmm_map_page(virt, phys, PAGE_WRITE);
+
+uint64_t *ptr = (uint64_t *)virt;
+
+
+*ptr = 0xCAFEBABE;   // NESMIE CRASHNÚŤ
 
 
 
